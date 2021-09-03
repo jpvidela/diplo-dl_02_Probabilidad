@@ -1,9 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import NullFormatter
-
-import matplotlib.pyplot as plt
-from matplotlib.ticker import NullFormatter
 from mpl_toolkits.mplot3d import Axes3D
 
 def plot_joint_3d(conjunta_dict, bins_width = 1, az=50, el=-5, ax=None, p_max=None, a_max=None, p_min=None, a_min=None, color='b'):
@@ -11,25 +8,35 @@ def plot_joint_3d(conjunta_dict, bins_width = 1, az=50, el=-5, ax=None, p_max=No
         conj_array = np.array([[p,a] for p,a in conjunta_dict.keys()])
         p_max, a_max = np.max(conj_array, axis=0)
         p_min, a_min = np.min(conj_array, axis=0)
+    # La cantidad de elementos del linspace es max-min+1 para tener un valor por cada entero del intervalo (?)
     espacio_muestral_pesos = np.linspace(p_min, p_max, p_max - p_min + 1)
     espacio_muestral_alturas = np.linspace(a_min, a_max, a_max - a_min + 1)
+    # Creo un array con las coordenadas de cada valor en 2d (x e y), basado en los espacios muestrales de peso y altura
     xpos, ypos = np.meshgrid(espacio_muestral_pesos, espacio_muestral_alturas)
+    # flatten('f') pasa todo a un array, avanzando en dirección de las columnas
+    
+    # xpos, ypos y zpos son las coordenadas en cada dirección de cada barra a graficar
     xpos = xpos.flatten('F')
     ypos = ypos.flatten('F')
     zpos = np.zeros_like(xpos)
+    
+    # dx, dy, dz son las dimensiones de cada barra (un elemento por barra a graficar), para cada dirección.
     dx = bins_width * np.ones_like(zpos)
     dy = dx.copy()
     
     conjunta_H = np.zeros([p_max - p_min + 1, a_max-a_min + 1])
     height, width = conjunta_H.shape
     for (p,a), f in conjunta_dict.items():
+        # p - p_min, a - a_min me da la coordenada dentro del array correspondiente a ese par de valores
         conjunta_H[p - p_min, a - a_min] = f
-        
+    
+    # Paso todo a un array de una fila. De esta manera tengo todas las alturas de las barras del gráfico
     dz = conjunta_H.astype(int).flatten()
     if ax == None:
         fig = plt.figure(figsize=(20,20))
         ax = fig.add_subplot(111, projection='3d')
     ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color=color, alpha=0.5)
+    # Seteo la vista del gráfico 3D (azimut y elevación)
     ax.view_init(az, el)
     if ax == None:
         plt.show()
